@@ -1,21 +1,20 @@
-name: ml-gpu-env
+name: atm-forecasting
 channels:
-  - pytorch
-  - nvidia
   - conda-forge
-  - defaults
+  - pytorch
 dependencies:
-  - python=3.12.10
+  - python=3.10
   - numpy
   - pandas
   - scikit-learn
-  - pytorch=2.6.0
-  - torchvision
-  - torchaudio
-  - pytorch-cuda=12.1
   - xgboost
+  - pytorch
   - matplotlib
   - seaborn
+  - jupyter
+  - openpyxl
   - pip
   - pip:
       - optuna
+
+

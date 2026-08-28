@@ -1,105 +1,140 @@
 # ATM Cash Withdrawal Forecasting
 
-This repository contains experiments on forecasting daily ATM cash withdrawals using machine learning and deep learning models.  
-The work is based on the paper *"Calendar, Holiday, and Temporal Features for ATM Demand: Modeling, Zero Handling, and Clustering Effects"*.
+Daily cash-demand forecasting for 31 ATMs, with a focus on calendar effects,
+lagged demand, zero-withdrawal periods and model comparison.
 
-## 📁 Repository Structure
-```markdown
-├── environment.yml
-├── LICENSE
-├── README.md
+The repository now separates two layers of work:
+
+- **Leakage-aware benchmark:** a reproducible expanding-window evaluation with
+  an untouched final test period (`src/time_safe_benchmark.py`).
+- **Exploratory experiments:** Linear Regression, XGBoost, LSTM and N-BEATS
+  notebooks covering feature sets, sequence lengths, clustering and zero
+  handling.
+
+## Why this project matters
+
+ATM replenishment has asymmetric operational costs. Excess cash creates idle
+capital, insurance and transport costs; insufficient cash creates service
+failures and emergency replenishment. Forecast quality therefore affects both
+customer availability and cash logistics.
+
+## Verified benchmark result
+
+The leakage-aware benchmark uses three expanding-window validation folds for
+model selection and reserves the final 15% of dates as an untouched test set.
+All lag and rolling features use past observations only.
+
+| Data variant | Model | Final-test sMAPE | WAPE | MAE |
+|---|---:|---:|---:|---:|
+| Zero-handled | XGBoost | **42.60%** | **32.12%** | **15,438.71** |
+| Raw active period | XGBoost | 42.94% | 32.33% | 15,539.38 |
+| Raw active period | Naive lag-1 | 56.40% | 52.11% | 25,045.70 |
+| Raw active period | Ridge | 60.77% | 52.55% | 25,254.32 |
+
+On the untouched test period, the zero-handled XGBoost model improves sMAPE by
+13.80 percentage points and WAPE by 19.99 percentage points versus the lag-1
+naive benchmark. In this final period, long zero runs do not occur in the
+targets, so zero handling mainly changes the development data and produces only
+a small improvement over the raw-active XGBoost model.
+
+The full table and chart are in:
+
+- `results/time_safe_benchmark.csv`
+- `results/time_safe_benchmark.png`
+- `results/time_safe_benchmark_metadata.json`
+
+## Exploratory experiment scope
+
+The archived notebooks investigate:
+
+- **Calendar features:** weekday, day of month, month, official holidays and half-days
+- **Temporal features:** lags of 1, 2, 3, 7, 14 and 28 days; rolling means and standard deviations
+- **Models:** Linear Regression, XGBoost, LSTM and N-BEATS
+- **Sequence lengths:** 7, 14, 28 and 84 days, depending on the experiment
+- **ATM segmentation:** global models and k-means demand-level clusters
+- **Zero handling:** raw active-period data versus removal of long zero runs
+
+The archived workbook contains the earlier exploratory comparison. Its best
+recorded weighted sMAPE is 27.84% for XGBoost with combined calendar and temporal
+features. That figure is **not presented as final-test performance**: the earlier
+notebooks used the same holdout for tuning and reporting, and their row-wise
+sequence construction does not fully isolate ATM series. Use the leakage-aware
+benchmark above for defensible performance claims.
+
+## Repository structure
+
+```text
+.
+├── data/
+│   └── README.md
 ├── notebooks/
 │   ├── preliminary_data_analysis.ipynb
 │   ├── models_with_zero_handling.ipynb
 │   └── models_without_zero_handling.ipynb
 ├── results/
-│   └── standardized_models_results.xlsx
+│   ├── README.md
+│   ├── standardized_models_results.xlsx
+│   ├── time_safe_benchmark.csv
+│   ├── time_safe_benchmark.png
+│   └── time_safe_benchmark_metadata.json
+├── src/
+│   └── time_safe_benchmark.py
+├── environment.yml
+└── LICENSE
 ```
 
-## 📌 Motivation
-Efficient ATM cash management is critical for banks. Overstocking increases idle cash, insurance, and transportation costs, while understocking leads to service failures and emergency replenishments. Accurate short-term forecasting helps banks balance these trade-offs.
+## Data
 
-## 📂 Contents
-- `environment.yml` — Conda environment specification (Python 3.12.10, PyTorch 2.6.0 with CUDA 12.1, XGBoost, scikit-learn, Optuna).
-- `preliminary_data_analysis.ipynb` — Exploratory data analysis of ATM withdrawal data.
-- `models_with_zero_handling.ipynb` — Notebook with models trained after removing zero-withdrawal sequences.
-- `models_without_zero_handling.ipynb` — Notebook with models trained on raw data including zeros.
-- `standardized_models_results.xlsx` — Collected model results in a standardized format for easier comparison.
-- `LICENSE` — Open-source license for the codebase.
+The source workbook is not distributed in the repository. The analysis expects
+an `ATM` sheet with:
 
-> 📌 The research paper describing methodology and results is **submitted separately by email**.
+- `CASHP_ID`
+- `DATE`
+- `WITHDRWLS`
 
-## 🗂 Dataset
-- 31 ATMs from a large Turkish city.  
-- Time span: 2 years and 2 months.  
-- Some ATMs activated late → zero periods (due to outages, pre-activation, or stock-outs).  
-- Features engineered:
-  - **Calendar effects**: day of week, day of month, month, holidays, half-days.  
-  - **Temporal effects**: lagged values (1, 2, 3, 7, 14, 28 days), rolling mean/std.  
-  - **Clusters**: ATMs grouped into 2–4 demand-level clusters using k-means.  
+Place a legally obtained copy at
+`data/2024-12-09_ATM_Branch_Data.xlsx`. See `data/README.md` for details.
 
-## 🤖 Models
-Four model families were tested under identical splits:
-- **Linear Regression** — baseline, transparent and interpretable.  
-- **XGBoost** — gradient-boosted trees for structured tabular features.  
-- **LSTM** — sequence model for capturing temporal dependencies.  
-- **N-BEATS** — neural architecture for time-series forecasting.  
+## Setup
 
-Hyperparameters for all models were tuned with **Optuna**.
-
-## 🔬 Experiments
-The notebooks test different design choices:
-- **Feature sets**: raw values, calendar features, temporal features, combined features.  
-- **Sequence lengths**: 7, 14, 28, 84 (depending on feature set).  
-- **Zero handling**: keeping vs. excluding zero-withdrawal periods.  
-- **Clustering**: global models vs. cluster-based models (k=2, 3, 4).  
-
-Evaluation metrics:
-- **SMAPE** (Symmetric Mean Absolute Percentage Error)  
-- **MAE** (Mean Absolute Error)  
-
-## 🚀 Setup
-
-Create and activate the environment:
 ```bash
 conda env create -f environment.yml
-conda activate ml-gpu-env
+conda activate atm-forecasting
 ```
 
-Start Jupyter:
+Run the leakage-aware benchmark from the repository root:
+
 ```bash
-jupyter notebook
+python src/time_safe_benchmark.py \
+  --data data/2024-12-09_ATM_Branch_Data.xlsx \
+  --output-dir results
 ```
 
-## ▶️ How to Run
+The notebooks are computationally heavier because they include repeated Optuna
+searches and neural models. Reduce the number of trials for a quick smoke test.
 
-Run the notebooks in the following order:
+## Evaluation design
 
-1. **Preliminary Analysis**  
-   - Open `preliminary_data_analysis.ipynb`  
-   - Explore the dataset  
-   - Check ATM-level differences and calendar/holiday effects  
+The current benchmark:
 
-2. **Models With Zero Handling**  
-   - Open `models_with_zero_handling.ipynb`  
-   - Train and evaluate models with zero sequences removed  
+1. sorts every ATM series by date;
+2. creates lags and rolling statistics using past values only;
+3. keeps the last 15% of dates untouched;
+4. tunes Ridge and XGBoost over three expanding-window folds;
+5. reports sMAPE, WAPE and MAE on the final test period;
+6. compares raw active-period data with a 14-day long-zero-run rule.
 
-3. **Models Without Zero Handling**  
-   - Open `models_without_zero_handling.ipynb`  
-   - Train and evaluate models using raw data including zeros  
+## Limitations and next steps
 
-4. **Standardized Results**  
-   - Review `standardized_models_results.xlsx`  
-   - Contains organized performance metrics from all tested models  
-   - Makes it easier to compare across feature sets, clustering, and zero handling  
+- The dataset covers one city and one historical period; external validity is limited.
+- Deep-learning and clustering experiments remain exploratory until rerun under
+  the same series-aware, untouched-test protocol.
+- Probabilistic forecasts and prediction intervals are not yet included.
+- A replenishment-cost evaluation would connect forecast error more directly to
+  the operational decision.
 
-⚠️ **Note:** Training with Optuna can take a long time since it runs multiple trials.  
-For quick code tryouts, reduce the number of Optuna trials (e.g., set trials to 5 instead of 100).  
+## Licence
 
-
-> 🔁 Each notebook is self-contained: rerun all cells from top to bottom to reproduce results.
-
-
-
+MIT. See `LICENSE`.
 
 

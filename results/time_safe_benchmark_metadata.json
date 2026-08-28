@@ -1,0 +1,9 @@
+{
+  "source_file": "2024-12-09_ATM_Branch_Data.xlsx",
+  "atm_count": 31,
+  "date_min": "2006-01-29",
+  "date_max": "2008-02-25",
+  "final_test_start": "2007-11-04",
+  "zero_run_threshold_days": 14,
+  "validation": "3-fold expanding-window CV on the development period; final 15% of dates untouched"
+}

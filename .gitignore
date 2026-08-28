@@ -1,0 +1,28 @@
+# Source data is not distributed
+data/*
+!data/README.md
+
+# Python and notebooks
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Environments and local settings
+.env
+.venv/
+venv/
+
+# Generated intermediate model objects
+results/*.pkl
+results/intermediate/
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+
