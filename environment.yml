@@ -12,9 +12,8 @@ dependencies:
   - matplotlib
   - seaborn
   - jupyter
+  - ipykernel
   - openpyxl
   - pip
   - pip:
       - optuna
-
-
